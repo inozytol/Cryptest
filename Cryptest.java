@@ -4,18 +4,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import java.security.NoSuchAlgorithmException;
 
-/*
-CREATING KEY FROM BYTE ARRAY
-https://docs.oracle.com/javase/8/docs/api/index.html?javax/crypto/KeyGenerator.html
-public class SecretKeySpec
-extends Object
-implements KeySpec, SecretKey
-
-This class specifies a secret key in a provider-independent fashion.
-
-It can be used to construct a SecretKey from a byte array, without having to go through a (provider-based) SecretKeyFactory. 
-*/
-//byte[] b = string.getBytes(StandardCharsets.UTF_8); 
+import java.nio.charset.StandardCharsets; //needed for specifing charset for getBytes
 
 
 class Cryptest {
@@ -47,6 +36,11 @@ class Cryptest {
 	    System.exit(0);
 			       
 	}
+
+	// ==== ENCRYPTING PLAINTEXT USING PASSWORD =======
+	byte [] dataToEncrypt = "This is plaintext".getBytes(StandardCharsets.UTF_8);
+
+        char [] passphrase = {'h','e','l','l','o'};
 	
     }
 
