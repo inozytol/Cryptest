@@ -19,6 +19,6 @@ There is such thing as defining 'provider' (which can specify how exactly things
 
 * key spec and  parameter spec are in javax.crypto.spec https://docs.oracle.com/javase/8/docs/api/javax/crypto/spec/package-summary.html
 * PBE key spec - what does it do? It takes password in char [] form, can also take salt and iteration count. <- it can be passed as an arguemnt to SecretKeyFactory generateSecret method to get SecretKey, that can be passed to Cipher init method.
-* SecretKeySpec implements key, but PBEKeySpec does not... 
+* SecretKeySpec implements key, but PBEKeySpec does not, which makes sense since it doesn't contain any information about algorithm, it is just raw passphrase and some optional hashing parameters
 * SecretKeyFactory needs to be created using SecretKeyFactory.getInstance(String algorithm)
 * Where to find out what kind of parameters AES Cipher need? (Except examples?) - maybe in provider documentation?
