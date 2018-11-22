@@ -13,3 +13,12 @@ https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpe
 * parameters are stored in param spec object, constructed using new, with arguments (for AES it is
 
 There is such thing as defining 'provider' (which can specify how exactly things should be done) but it limits portability and can hurt performance
+
+
+### For password based encryption there are classes and algorithm names with PBE prefix
+
+* key spec and  parameter spec are in javax.crypto.spec https://docs.oracle.com/javase/8/docs/api/javax/crypto/spec/package-summary.html
+* PBE key spec - what does it do? It takes password in char [] form, can also take salt and iteration count. <- it can be passed as an arguemnt to SecretKeyFactory generateSecret method to get SecretKey, that can be passed to Cipher init method.
+* SecretKeySpec implements key, but PBEKeySpec does not... 
+* SecretKeyFactory needs to be created using SecretKeyFactory.getInstance(String algorithm)
+* Where to find out what kind of parameters AES Cipher need? (Except examples?) - maybe in provider documentation?
