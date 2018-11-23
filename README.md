@@ -21,4 +21,9 @@ There is such thing as defining 'provider' (which can specify how exactly things
 * PBE key spec - what does it do? It takes password in char [] form, can also take salt and iteration count. <- it can be passed as an arguemnt to SecretKeyFactory generateSecret method to get SecretKey, that can be passed to Cipher init method.
 * SecretKeySpec implements key, but PBEKeySpec does not, which makes sense since it doesn't contain any information about algorithm, it is just raw passphrase and some optional hashing parameters
 * SecretKeyFactory needs to be created using SecretKeyFactory.getInstance(String algorithm)
-* Where to find out what kind of parameters AES Cipher need? (Except examples?) - maybe in provider documentation?
+* Where to find out what kind of parameters AES Cipher need? (Except examples?) - maybe in provider documentation? There is something called PKCS #5 https://tools.ietf.org/html/rfc2898#section-4.1
+* Why oh why secret key factory doesn't need key param spec but cipher init does need?
+ * Key param spec contains salt (10 random bytes?) and iteration count (1000 times)
+ * maybe because Cipher needs to add this information to encrypted data in order to decrypt with the same parameters...
+* For decryption pbe params are not needed for cipher, they are probably inferred from metada attached to encrypted data
+* For some reason it might be prudent to delete contents of passphrase and secret key variable?
