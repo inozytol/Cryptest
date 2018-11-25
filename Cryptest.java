@@ -9,6 +9,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.CipherInputStream;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException; //for SecretKeyFactory
@@ -20,6 +22,10 @@ import java.security.InvalidKeyException;
 import java.nio.charset.StandardCharsets; //needed for specifing charset for getBytes
 import java.nio.charset.Charset;
 
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 class Cryptest {
     private static String cipherAlgo = "AES/CBC/PKCS5Padding";
@@ -122,7 +128,7 @@ class Cryptest {
 	try{
 	    c2.init(Cipher.ENCRYPT_MODE, secretKey, pbeParams);
 	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for encryption");
+	    System.err.println("Invalid key for encryption: " + e + e.getMessage());
 	    System.exit(0);
 	} catch (InvalidAlgorithmParameterException e) {
 	    System.err.println("Invalid algorithm parameter for encryption");
@@ -142,12 +148,35 @@ class Cryptest {
 	    System.exit(0);
 	}
 
+	
+	//Decryption CIPHER object creation (to avoid switching inits with different modes)
+	Cipher decryptingCipher = null;
+	try{
+	    //Creating cipher object for AES 128bit encryption with padding
+	    decryptingCipher = Cipher.getInstance(pbeCipherAlgo);
+	}
+	catch (NoSuchAlgorithmException e){
+	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
+	    System.exit(0);
+			       
+	}catch (NoSuchPaddingException e){
+	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
+	    System.exit(0);
+	}
+
+	PBEParameterSpec pbeParamsDec = new PBEParameterSpec(salt, iterationCount, new IvParameterSpec(c2.getIV()));
+	
+
+	
 	// DECRYPTION INIT
 	// before encryption cipher object must be initialized with mode, key and pbe params
 	try{
-	    c2.init(Cipher.DECRYPT_MODE, secretKey);
+	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKey, pbeParamsDec);
 	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for decryption");
+	    System.err.println("Invalid key for decryption" + e);
+	    System.exit(0);
+	} catch (InvalidAlgorithmParameterException e) {
+	    System.err.println("Invalid algorithm parameter for decryption" + e);
 	    System.exit(0);
 	}
 
@@ -155,7 +184,7 @@ class Cryptest {
 	// DECRYPTION FINAL
 	byte [] outBuffer = null;
 	try {
-	    outBuffer = c2.doFinal(buffer);
+	    outBuffer = decryptingCipher.doFinal(buffer);
 	} catch (IllegalBlockSizeException e) {
 	    System.err.println("Invalid block size for decryption");
 	    System.exit(0);
@@ -171,6 +200,41 @@ class Cryptest {
 	System.out.println("");
 	System.out.println(new String(outBuffer, dataCharset));
 
+
+	int temp = 0;
+	//Reading data from file, encrypting it and writing it to encrypted file
+	//Learning to read and write data streams (plain text data)
+	try (FileInputStream fis = new FileInputStream("foo");
+	     FileOutputStream fos = new FileOutputStream("foo2")){
+	    while((temp=fis.read())!=-1) fos.write(temp);
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	}
+
+	
+
+	//Using CipherInputStream to read, encrypt, write and decrypt files
+
+	try (FileInputStream fis = new FileInputStream("foo");
+	     FileOutputStream fos = new FileOutputStream("foo_crypt")){
+	    CipherInputStream cis = new CipherInputStream(fis,c2);
+	    while((temp=cis.read())!=-1) fos.write(temp);
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	}
+
+	try (FileInputStream fis = new FileInputStream("foo_crypt");
+	     FileOutputStream fos = new FileOutputStream("foo_decrypt")){
+	    CipherInputStream cis = new CipherInputStream(fis,decryptingCipher);
+	    while((temp=cis.read())!=-1) fos.write(temp);
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	}
+
+	
     }
 
 }
