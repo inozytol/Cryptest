@@ -26,4 +26,8 @@ There is such thing as defining 'provider' (which can specify how exactly things
  * Key param spec contains salt (10 random bytes?) and iteration count (1000 times)
  * maybe because Cipher needs to add this information to encrypted data in order to decrypt with the same parameters...
 * For decryption pbe params are not needed for cipher, they are probably inferred from metada attached to encrypted data
+* Seems that only decryption with the same cipher object works this way. After changing decryption object initialization complains on lack of IV. Probably need some additional parameter in constructor of PBEParameterSpec, meaning AlgorithmParameterSpec class https://docs.oracle.com/javase/8/docs/api/javax/crypto/spec/IvParameterSpec.htmlx
 * For some reason it might be prudent to delete contents of passphrase and secret key variable?
+* CipherInputStream can be used to decrypt/encrypt contents of the files
+
+### How to include IV, salt and iteration count in encrypted message?
