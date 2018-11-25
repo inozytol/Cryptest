@@ -31,3 +31,9 @@ There is such thing as defining 'provider' (which can specify how exactly things
 * CipherInputStream can be used to decrypt/encrypt contents of the files
 
 ### How to include IV, salt and iteration count in encrypted message?
+* 
+* Maybe AEAD? AAD?
+
+
+### Using separate keys encrypted using keyfiles
+* Key wrapping
