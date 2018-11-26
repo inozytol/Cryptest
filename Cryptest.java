@@ -30,7 +30,7 @@ import java.io.IOException;
 class Cryptest {
     private static String cipherAlgo = "AES/CBC/PKCS5Padding";
     private static String keyAlgo = "AES";
-    
+    private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
     public static void main(String [] args){
 
 	try{
@@ -108,7 +108,7 @@ class Cryptest {
 	PBEParameterSpec pbeParams = new PBEParameterSpec(salt, iterationCount);
 
 
-	String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
+
 	Cipher c2 = null;
 	try{
 	    //Creating cipher object for AES 128bit encryption with padding
@@ -234,7 +234,46 @@ class Cryptest {
 	    System.exit(0);
 	}
 
+	// Saving metadata (iv, salt and iteration count along with encrypted data)
+	// Format: iteration count (integer, 4 bytes), salt length (integer, 4 bytes), salt (byte array), iv length (integer, 4 bytes), iv (byte array), encrypted data
+	java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(15);
+	bb.putInt(15);
+
+
+	// Checking what kind of ByteBuffer did we get since byte buffer is abstract
+	System.out.println(bb.getClass().getName());
+	System.out.println((java.nio.ByteBuffer.allocate(1)).getClass().getName());
 	
+	
+	
+
+	Cipher encryptingCipherForMetadata = getInstanceOfPBECipher();
+
+	// Reading metadata for decryption
+	
+	// Use ByteBuffer as it can convert byte [] into integer
+
+
+	// Using Hmac on encrypted data and metada
+	// there is class for hmac
+	
+    }
+
+    public static Cipher getInstanceOfPBECipher() {
+    	Cipher c2 = null;
+	try{
+	    //Creating cipher object for AES 128bit encryption with padding
+	    c2 = Cipher.getInstance(pbeCipherAlgo);
+	}
+	catch (NoSuchAlgorithmException e){
+	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
+	    System.exit(0);
+			       
+	}catch (NoSuchPaddingException e){
+	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
+	    System.exit(0);
+	}
+	return c2;
     }
 
 }

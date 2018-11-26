@@ -33,7 +33,7 @@ There is such thing as defining 'provider' (which can specify how exactly things
 ### How to include IV, salt and iteration count in encrypted message?
 * 
 * Maybe AEAD? AAD?
-
+* ByteBuffer https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html can be used to convert primitive types into byte arrays and back. Despite the fact, that it has abstract methods it can be used, because it has subclasses (that themselves are not documented) https://community.oracle.com/thread/1210528
 
 ### Using separate keys encrypted using keyfiles
 * Key wrapping
