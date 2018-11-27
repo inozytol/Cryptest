@@ -34,6 +34,7 @@ There is such thing as defining 'provider' (which can specify how exactly things
 * 
 * Maybe AEAD? AAD?
 * ByteBuffer https://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html can be used to convert primitive types into byte arrays and back. Despite the fact, that it has abstract methods it can be used, because it has subclasses (that themselves are not documented) https://community.oracle.com/thread/1210528
+Class that has been actually used can be printed using (java.nio.ByteBuffer.allocate(1)).getClass().getName()
 
 ### Using separate keys encrypted using keyfiles
 * Key wrapping

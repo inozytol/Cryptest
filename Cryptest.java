@@ -21,6 +21,7 @@ import java.security.InvalidKeyException;
 
 import java.nio.charset.StandardCharsets; //needed for specifing charset for getBytes
 import java.nio.charset.Charset;
+import java.nio.ByteBuffer;
 
 
 import java.io.FileInputStream;
@@ -86,7 +87,7 @@ class Cryptest {
 	} catch (NoSuchAlgorithmException e){
 	    System.err.println("Can't create SecretKeyFactory object for specified algorithm " 
 			       + secretKeyFactoryAlgoName);
-	    System.exit(0);
+	    System.exit(1);
 	}
 
 	PBEKeySpec keySpec = new PBEKeySpec(passphrase);
@@ -95,8 +96,8 @@ class Cryptest {
 	    secretKey = skf.generateSecret(keySpec);
 	} catch (InvalidKeySpecException e) {
 	    System.out.println("Invalid key spec for key factory");
-	    System.exit(0);
-	}
+	    System.exit(1);
+	} 
 
 	//iteration count from PKCS #5
 	int iterationCount = 1000;
@@ -116,11 +117,11 @@ class Cryptest {
 	}
 	catch (NoSuchAlgorithmException e){
 	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
-	    System.exit(0);
+	    System.exit(1);
 			       
 	}catch (NoSuchPaddingException e){
 	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
-	    System.exit(0);
+	    System.exit(1);
 	}
 
 	// ENCRYPTION INIT
@@ -129,10 +130,10 @@ class Cryptest {
 	    c2.init(Cipher.ENCRYPT_MODE, secretKey, pbeParams);
 	} catch (InvalidKeyException e) {
 	    System.err.println("Invalid key for encryption: " + e + e.getMessage());
-	    System.exit(0);
+	    System.exit(1);
 	} catch (InvalidAlgorithmParameterException e) {
 	    System.err.println("Invalid algorithm parameter for encryption");
-	    System.exit(0);
+	    System.exit(1);
 	}
 
 
@@ -245,10 +246,81 @@ class Cryptest {
 	System.out.println((java.nio.ByteBuffer.allocate(1)).getClass().getName());
 	
 	
-	
+       
 
 	Cipher encryptingCipherForMetadata = getInstanceOfPBECipher();
+	
+	// lets try to put all the data into keyspec and init cipher only with secretkey
 
+	char [] password2 = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
+	
+	byte[] saltForMetadata = new byte[12];
+	int itCountMeta = 1024;
+	new SecureRandom().nextBytes(saltForMetadata);
+	PBEKeySpec pbekeyspecForMetadata = new PBEKeySpec(password2, saltForMetadata, itCountMeta);
+
+	//creating key factory
+
+	//algorithm name for SecretKeyFactory
+	String secretKeyFactoryAlgoNameMeta = "PBEWithHmacSHA256AndAES_128";
+        // SecretKeyFactory is needed to convert PBEKeySpec into SecretKey for Cipher.init
+	SecretKeyFactory skfmeta = null;
+	try {
+	     skfmeta = SecretKeyFactory.getInstance(secretKeyFactoryAlgoNameMeta);
+	} catch (NoSuchAlgorithmException e){
+	    System.err.println("Can't create SecretKeyFactory object for specified algorithm " 
+			       + secretKeyFactoryAlgoName);
+	    System.exit(1);
+	}
+
+       
+	SecretKey secretKeyMeta = null;
+	try {
+	    secretKeyMeta = skfmeta.generateSecret(pbekeyspecForMetadata);
+	} catch (InvalidKeySpecException e) {
+	    System.out.println("Invalid key spec for key factory");
+	    System.exit(1);
+	} 
+	
+	// initializeCipherObject(encryptingCipherForMetadata, 1000, );
+
+	
+	// ENCRYPTION INIT
+	// before encryption cipher object must be initialized with mode, key and pbe params
+	try{
+	    encryptingCipherForMetadata.init(Cipher.ENCRYPT_MODE, secretKeyMeta);
+	} catch (InvalidKeyException e) {
+	    System.err.println("Invalid key for encryption: " + e + e.getMessage());
+	    System.exit(1);
+	}
+
+	byte [] ivForMeta = encryptingCipherForMetadata.getIV();
+	System.out.println("IV for metadata length: " + ivForMeta.length);
+
+	int metaLength = ivForMeta.length;
+
+	ByteBuffer bbmeta = ByteBuffer.allocate(4);
+	bbmeta.putInt(metaLength);
+
+	System.out.println("Buffer state: " + bbmeta);
+
+	try (FileInputStream fis = new FileInputStream("foo");
+	     FileOutputStream fos = new FileOutputStream("foo_encrypt_meta")){
+	    CipherInputStream cis = new CipherInputStream(fis,encryptingCipherForMetadata);
+	    fos.write(bbmeta.array()); // writing length of iv array (integer, 4 bytes)
+	    fos.write(ivForMeta);      // writing iv array (16 bytes this time)
+	    bbmeta.clear();
+	    bbmeta.putInt(saltForMetadata.length);
+	    fos.write(bbmeta.array());  // writing password salt length
+	    fos.write(saltForMetadata);                              // writing password salt in bytes
+	    bbmeta.clear();
+	    bbmeta.putInt(itCountMeta);// writing iteration number
+	    fos.write(bbmeta.array());
+	    while((temp=cis.read())!=-1) fos.write(temp);
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	}
 	// Reading metadata for decryption
 	
 	// Use ByteBuffer as it can convert byte [] into integer
@@ -256,7 +328,11 @@ class Cryptest {
 
 	// Using Hmac on encrypted data and metada
 	// there is class for hmac
-	
+
+
+	// next step would be wrapping key
+	    
+
     }
 
     public static Cipher getInstanceOfPBECipher() {
@@ -267,11 +343,11 @@ class Cryptest {
 	}
 	catch (NoSuchAlgorithmException e){
 	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
-	    System.exit(0);
+	    System.exit(1);
 			       
 	}catch (NoSuchPaddingException e){
 	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
-	    System.exit(0);
+	    System.exit(1);
 	}
 	return c2;
     }
