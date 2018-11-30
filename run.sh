@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-rm foo
-rm foo2
-rm foo_crypt
-rm foo_decrypt
+rm foo*
 
 echo "Hello and goodbye" > foo
 
