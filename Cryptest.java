@@ -29,6 +29,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.util.Arrays;
+
 class Cryptest {
     private static String cipherAlgo = "AES/CBC/PKCS5Padding";
     private static String keyAlgo = "AES";
@@ -308,20 +310,7 @@ class Cryptest {
 	try (FileInputStream fis = new FileInputStream("foo");
 	     FileOutputStream fos = new FileOutputStream("foo_encrypt_meta")){
 	    CipherInputStream cis = new CipherInputStream(fis,encryptingCipherForMetadata);
-	    fos.write(bbmeta.array()); // writing length of iv array (integer, 4 bytes)
-	    fos.write(ivForMeta);      // writing iv array (16 bytes this time)
-	    bbmeta.clear();
-	    bbmeta.putInt(salt.length);
-	    fos.write(bbmeta.array());  // writing password salt length
-	    fos.write(salt);                              // writing password salt in bytes
-	    System.out.println("Salt written: ");
-	    for(byte b : salt) System.out.print(Integer.toBinaryString(b) + " ");
-	    bbmeta.clear();
-	    bbmeta.putInt(itCountMeta);// writing iteration number
-	    fos.write(bbmeta.array());
-	    int writecnt = 0;
-	    while((temp=cis.read())!=-1) {fos.write(temp); writecnt++;}
-	    System.out.println("write count: "  + writecnt);
+
 	} catch (IOException e) {
 	    System.err.println("Error while reading/writing file: " + e);
 	    System.exit(0);
@@ -448,10 +437,50 @@ class Cryptest {
 	try {
 	    secretKey = skf.generateSecret(pbeKeySpec);
 	} catch (InvalidKeySpecException e) {
-	    System.out.println("Invalid key spec for key factory");
+	    System.err.println("Invalid key spec for key factory");
 	}
 
 	return secretKey;
     }
 
+
+    public static byte[] paramethersToBytes(int iterationCount, byte [] salt, byte [] iv){
+	int saltLength = salt.length;
+	int ivLength = iv.length;
+	//4 bytes for data length, 4 bytes for iteration count + 2x4 bytes for salt and iv lengths
+	int outputLength = 4 + 4 + saltLength + 4 + iv.length + 4;
+	int index = 0;
+	
+        ByteBuffer output = ByteBuffer.allocate(outputLength);
+
+	output.putInt(outputLength);
+	output.putInt(iterationCount);
+	output.putInt(saltLength);
+	output.put(salt);
+	output.putInt(ivLength);
+	output.put(iv);
+	
+	return output.array();
+    }
+
+    public static PBEParameterSpec parametersFromBytes(byte [] data){
+	int start = 4;  // ignore first four bytes as they contain data length
+	ByteBuffer bb = ByteBuffer.wrap(data, start, 4);
+	int itCount = bb.getInt(); //convert next four bytes int iteration count
+	
+	bb = ByteBuffer.wrap(data, start+4, 4);  // next four bytes contain salt length
+	int saltLength = bb.getInt();
+
+	// next we get salt of salt length bytes
+	byte [] salt = Arrays.copyOfRange(data, start+8, start+8+saltLength);
+
+	// next four bytes contain initialization vector
+	bb = ByteBuffer.wrap(data, start+8+saltLength, 4);
+	int ivLength = bb.getInt();
+	
+	// next we get iv of iv bytes
+	byte [] iv = Arrays.copyOfRange(data, start+12+saltLength, start+12+saltLength+ivLength);
+	
+	return new PBEParameterSpec(salt, itCount, new IvParameterSpec(iv));
+    }
 }
