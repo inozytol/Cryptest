@@ -31,7 +31,7 @@ import java.io.IOException;
 
 import java.util.Arrays;
 
-class Cryptest {
+public class Cryptest {
     private static String cipherAlgo = "AES/CBC/PKCS5Padding";
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
@@ -444,7 +444,7 @@ class Cryptest {
     }
 
 
-    public static byte[] paramethersToBytes(int iterationCount, byte [] salt, byte [] iv){
+    public static byte[] parametersToBytes(int iterationCount, byte [] salt, byte [] iv){
 	int saltLength = salt.length;
 	int ivLength = iv.length;
 	//4 bytes for data length, 4 bytes for iteration count + 2x4 bytes for salt and iv lengths

@@ -16,7 +16,7 @@ javac -d target Cryptest.java
 let "result=$result+$?"
 
 # Test compilation requires this classpath as it contains imports from junit jupiter
-javac -d target -cp ~/APPS/java/junit/junit-platform-console-standalone-1.3.2.jar TestClass.java
+javac -d target -cp ~/APPS/java/junit/junit-platform-console-standalone-1.3.2.jar:. TestClass.java
 let "result=$result+$?"
 
 if [ "$result" -eq "0" ]
