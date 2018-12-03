@@ -99,14 +99,19 @@ public class Cryptest {
 	    
 	    lengthOfInput = fis.read(tempBytesFromFile);
 
+
 	    
 	    ByteBuffer bb = ByteBuffer.allocate(4);
-	    bb.put(tempBytesFromFile, 0, 4); 
 
+	    bb.put(tempBytesFromFile, 0, 4); 
+	    bb.rewind();
 	    int lengthOfMetadata = bb.getInt();
 
 	    byte [] metadata = Arrays.copyOf(tempBytesFromFile, lengthOfMetadata);
-
+	    
+	    System.out.println("Read from input: " + lengthOfInput + " total, " +
+			       lengthOfMetadata + " is metadata");
+	    
 	    PBEParameterSpec pbeps = Cryptest.parametersFromBytes(metadata);
 
 	    Cipher decryptingCipher = getInstanceOfPBECipher();
@@ -114,11 +119,12 @@ public class Cryptest {
 	    SecretKey secretKeyForDecrypt = getSecretKeyForPBECipher(password,
 								     pbeps.getSalt(),
 								     pbeps.getIterationCount());
+
 	    
-	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt);
+	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt, pbeps);
 	    lengthOfOutput = decryptingCipher.doFinal(tempBytesFromFile,
 						      lengthOfMetadata,
-						      lengthOfInput-1,
+						      lengthOfInput-lengthOfMetadata,
 						      tempBytesToFile);
 
 	    fos.write(tempBytesToFile, 0, lengthOfOutput);
@@ -129,9 +135,9 @@ public class Cryptest {
 	    System.err.println("Error while reading/writing file: " + e);
 	} catch (InvalidKeyException e) {
 		System.err.println("Invalid key for decryption: " + e + e.getMessage());
-	}/* catch (InvalidAlgorithmParameterException e) {
+	} catch (InvalidAlgorithmParameterException e) {
 		    System.err.println("Invalid algorithm" + e);
-    }//*/
+	}
 	catch (ShortBufferException e) {
 	    System.out.println("Buffer too short!" + e);
 	}  catch (javax.crypto.IllegalBlockSizeException e) {
