@@ -24,6 +24,10 @@ then
     echo "Compilation completed"
     echo "Running tests"
     java -jar ~/APPS/java/junit/junit-platform-console-standalone-1.3.2.jar --class-path target --scan-class-path # it searches for tests in compiled classes from given directory
+    echo "Running Cryptest"
+    cd target
+    cp ../foo foo
+    java Cryptest
 else
     echo "Compilation failed"
 fi
