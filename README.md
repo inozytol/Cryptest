@@ -30,6 +30,14 @@ There is such thing as defining 'provider' (which can specify how exactly things
 * For some reason it might be prudent to delete contents of passphrase and secret key variable?
 * CipherInputStream can be used to decrypt/encrypt contents of the files
 
+
+* I think I will have to generate AES key myself, since secretKeyFactory refused to do so...
+* There is this generator: like KeyGenerator.getInstance("AES"); https://stackoverflow.com/questions/18228579/how-to-create-a-secure-random-aes-key-in-java
+* Then maybe i should wrap this key using password?
+* Here it is - the holy grail of AES code examples: how to generate aes from password:
+https://www.novixys.com/blog/aes-encryption-decryption-password-java/
+I would never guess...
+
 ### How to include IV, salt and iteration count in encrypted message?
 * 
 * Maybe AEAD? AAD?

@@ -12,6 +12,7 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.CipherInputStream;
 import javax.crypto.ShortBufferException;
+import javax.crypto.spec.SecretKeySpec;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException; //for SecretKeyFactory
@@ -36,6 +37,13 @@ public class Cryptest {
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
     public static void main(String [] args){
+
+	// Plain text for encryption should be converted to bytes
+	Charset dataCharset = StandardCharsets.UTF_8;
+	byte [] stringBytesToEncrypt = "This is plaintext".getBytes(dataCharset);
+	byte [] encryptedString = null;
+	byte [] stringBytesAfterDecryption;
+	String decryptedString;
 	
        	char [] password = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
 	int itCount = 1024;
@@ -43,8 +51,7 @@ public class Cryptest {
 	byte[] salt = new byte[10];
 	new SecureRandom().nextBytes(salt); //generating random bytes for salt
 	
-	SecretKey secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
-	
+	SecretKeySpec secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
 	// ENCRYPTION INIT
 	
 	Cipher encryptingCipher = getInstanceOfPBECipher();
@@ -54,7 +61,8 @@ public class Cryptest {
 	try{
 	    encryptingCipher.init(Cipher.ENCRYPT_MODE, secretKeyForEncryption);
 	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for encryption: " + e + e.getMessage());
+	    System.err.println("Invalid key for encryption: " + e.getMessage());
+	    System.err.println("Got " + secretKeyForEncryption.getAlgorithm());
 	    System.exit(1);
 	}
 
@@ -75,10 +83,12 @@ public class Cryptest {
 	    }
 	    System.out.println("Wrote " + output.length + " bytes of metada " +
 			       "and " + counter + " bytes of encrypted data");
+	    encryptedString = encryptingCipher.doFinal(stringBytesToEncrypt);
+	    
 	} catch (IOException e) {
 	    System.err.println("Error while reading/writing file: " + e);
 	    System.exit(0);
-	}
+	} catch (Exception e) {System.out.println(e);}
 
 
 	
@@ -113,15 +123,23 @@ public class Cryptest {
 			       lengthOfMetadata + " is metadata");
 	    
 	    PBEParameterSpec pbeps = Cryptest.parametersFromBytes(metadata);
-
+	    IvParameterSpec ivps = (IvParameterSpec) pbeps.getParameterSpec();
 	    Cipher decryptingCipher = getInstanceOfPBECipher();
-
-	    SecretKey secretKeyForDecrypt = getSecretKeyForPBECipher(password,
-								     pbeps.getSalt(),
-								     pbeps.getIterationCount());
-
 	    
-	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt, pbeps);
+	    SecretKeySpec secretKeyForDecrypt = getSecretKeyForPBECipher(password,
+									 pbeps.getSalt(),
+									 pbeps.getIterationCount());//*/
+	    //	    SecretKey secretKeyForDecrypt = getSecretKeyForPBECipher(password);
+		    
+	    
+	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt, ivps);
+	    
+	    System.out.println("Trying to decrypt");
+	    
+	    stringBytesAfterDecryption = decryptingCipher.doFinal(encryptedString);
+	    System.out.println("Decrypted text: " + new String(stringBytesAfterDecryption,
+							       dataCharset));
+	    
 	    lengthOfOutput = decryptingCipher.doFinal(tempBytesFromFile,
 						      lengthOfMetadata,
 						      lengthOfInput-lengthOfMetadata,
@@ -136,7 +154,7 @@ public class Cryptest {
 	} catch (InvalidKeyException e) {
 		System.err.println("Invalid key for decryption: " + e + e.getMessage());
 	} catch (InvalidAlgorithmParameterException e) {
-		    System.err.println("Invalid algorithm" + e);
+		    System.err.println("Invalid algorithm parameter exception" + e);
 	}
 	catch (ShortBufferException e) {
 	    System.out.println("Buffer too short!" + e);
@@ -144,7 +162,7 @@ public class Cryptest {
 	    System.out.println("Illegal block size " + e);
 	} catch (javax.crypto.BadPaddingException e) {
 	    System.out.println("Bad padding " + e);
-	}
+	} catch (Exception e) {System.out.println(e);}
 
 	
 	// ============ FUTURE GOALS HERE =============
@@ -165,7 +183,7 @@ public class Cryptest {
     	Cipher cipherInstance = null;
 	try{
 	    //Creating cipher object for AES 128bit encryption with padding
-	    cipherInstance = Cipher.getInstance(pbeCipherAlgo);
+	    cipherInstance = Cipher.getInstance(cipherAlgo);
 	}
 	catch (NoSuchAlgorithmException e){
 	    System.err.println("Can't create Cipher object for specified algorithm " + pbeCipherAlgo);
@@ -176,31 +194,32 @@ public class Cryptest {
 	return cipherInstance;
     }
 
-    public static SecretKey getSecretKeyForPBECipher(char []  password, byte [] salt, int itCount) {
+    public static SecretKeySpec getSecretKeyForPBECipher(char []  password, byte [] salt, int itCount) {
 	SecretKey secretKey = null;
-	PBEKeySpec pbeKeySpec = new PBEKeySpec(password, salt, itCount);
+	//needed to add length, otherwise for this algo factory was complaining
+	PBEKeySpec pbeKeySpec = new PBEKeySpec(password, salt, itCount, 128);
+	
+	String secretKeyFactoryAlgo = "PBKDF2WithHmacSHA256";
 
-	//creating key factory
-	String secretKeyFactoryAlgo = "PBEWithHmacSHA256AndAES_128";
 	// SecretKeyFactory is needed to convert PBEKeySpec into SecretKey for Cipher.init
-
 	SecretKeyFactory skf = null;
 	try {
 	    skf = SecretKeyFactory.getInstance(secretKeyFactoryAlgo);
 	} catch (NoSuchAlgorithmException e){
 	    System.err.println("Can't create SecretKeyFactory object for specified algorithm " 
-			       + secretKeyFactoryAlgo);
+			       + secretKeyFactoryAlgo + e);
 	}
 
 	try {
 	    secretKey = skf.generateSecret(pbeKeySpec);
 	} catch (InvalidKeySpecException e) {
-	    System.err.println("Invalid key spec for key factory");
+	    System.err.println("Invalid key spec for key factory" + e);
 	}
-
-	return secretKey;
+	SecretKeySpec skey = new SecretKeySpec(secretKey.getEncoded(), "AES"); // attaches algorithm info
+	return skey;
     }
 
+   
 
     public static byte[] parametersToBytes(int iterationCount, byte [] salt, byte [] iv){
 	int saltLength = salt.length;
