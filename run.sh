@@ -28,6 +28,11 @@ then
     cd target
     cp ../foo foo
     java Cryptest
+    #rm -rf doc
+    #mkdir doc
+    #cd doc
+    #javadoc ../Cryptest.java
+    
 else
     echo "Compilation failed"
 fi

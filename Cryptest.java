@@ -215,12 +215,20 @@ public class Cryptest {
 	} catch (InvalidKeySpecException e) {
 	    System.err.println("Invalid key spec for key factory" + e);
 	}
-	SecretKeySpec skey = new SecretKeySpec(secretKey.getEncoded(), "AES"); // attaches algorithm info
+	// attaches algorithm info to secret key, as required by cipher init of used algo
+	// SecretKey + "AES" string -> SecretKeySpec
+	SecretKeySpec skey = new SecretKeySpec(secretKey.getEncoded(), "AES"); 
 	return skey;
     }
 
    
-
+    /**
+     * Converts iteration count, salt and initialization vector into raw bytes
+     * @param iterationCount iteration count for key processing
+     * @param salt salt for hashing string password into secret key (?)
+     * @param iv initialization vector for CBC AES encryption
+     * @return byte array beginning with its length, and containing parameter values. Arrays are precluded with their lengths
+     */
     public static byte[] parametersToBytes(int iterationCount, byte [] salt, byte [] iv){
 	int saltLength = salt.length;
 	int ivLength = iv.length;
@@ -240,6 +248,10 @@ public class Cryptest {
 	return output.array();
     }
 
+    /** 
+     * Converts byte array returned by {@link #parametersToBytes(int iterationCount, byte [] salt, byte [] iv) parametersToBytes} function
+     * 
+     */
     public static PBEParameterSpec parametersFromBytes(byte [] data){
 	int start = 4;  // ignore first four bytes as they contain data length
 	ByteBuffer bb = ByteBuffer.wrap(data, start, 4);
@@ -260,161 +272,4 @@ public class Cryptest {
 	
 	return new PBEParameterSpec(salt, itCount, new IvParameterSpec(iv));
     }
-
-    /**
-     * Function containing code snipets and notes about various aspects of encryption
-     */
-    /*    private static void reminderCode(){
-	
-	// Reminders:
-	// Plain text for encryption should be converted to bytes
-	Charset dataCharset = StandardCharsets.UTF_8;
-	byte [] dataToEncrypt = "This is plaintext".getBytes(dataCharset);
-
-        // Passphrase should be char array, because they are easier to delete than String
-	char [] passphrase = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
-
-	//iteration count from PKCS #5
-	int iterationCount = 1024;
-	
-	//salt from java documentation	
-	byte[] salt = new byte[10];
-	new SecureRandom().nextBytes(salt); //generating random bytes for salt
-
-
-
-	java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(15);
-	bb.putInt(15);
-
-
-	// Checking what kind of ByteBuffer did we get since byte buffer is abstract
-	System.out.println(bb.getClass().getName());
-	System.out.println((java.nio.ByteBuffer.allocate(1)).getClass().getName());
-
-	
-	Cipher c2 = null;
-	try{
-	    //Creating cipher object for AES 128bit encryption with padding
-	    c2 = Cipher.getInstance(pbeCipherAlgo);
-	}
-	catch (NoSuchAlgorithmException e){
-	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
-	    System.exit(1);
-			       
-	}catch (NoSuchPaddingException e){
-	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
-	    System.exit(1);
-	}
-
-	// ENCRYPTION INIT
-	// before encryption cipher object must be initialized with mode, key and pbe params
-	try{
-	    c2.init(Cipher.ENCRYPT_MODE, secretKey, pbeParams);
-	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for encryption: " + e + e.getMessage());
-	    System.exit(1);
-	} catch (InvalidAlgorithmParameterException e) {
-	    System.err.println("Invalid algorithm parameter for encryption");
-	    System.exit(1);
-	}
-
-
-	// ENCRYPTION FINAL
-	byte [] buffer = null;
-	try {
-	    buffer = c2.doFinal(dataToEncrypt);
-	} catch (IllegalBlockSizeException e) {
-	    System.err.println("Invalid block size for encryption");
-	    System.exit(0);
-	} catch (BadPaddingException e) {
-	    System.err.println("Bad padding for encryption");
-	    System.exit(0);
-	}
-
-	
-	//Decryption CIPHER object creation (to avoid switching inits with different modes)
-	Cipher decryptingCipher = null;
-	try{
-	    //Creating cipher object for AES 128bit encryption with padding
-	    decryptingCipher = Cipher.getInstance(pbeCipherAlgo);
-	}
-	catch (NoSuchAlgorithmException e){
-	    System.err.println("Can't create Cipher object for specified algorithm " + cipherAlgo);
-	    System.exit(0);
-			       
-	}catch (NoSuchPaddingException e){
-	    System.err.println("Can't create Cipher object for  padding " + cipherAlgo);
-	    System.exit(0);
-	}
-
-	PBEParameterSpec pbeParamsDec = new PBEParameterSpec(salt, iterationCount, new IvParameterSpec(c2.getIV()));
-	
-
-	
-	// DECRYPTION INIT
-	// before encryption cipher object must be initialized with mode, key and pbe params
-	try{
-	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKey, pbeParamsDec);
-	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for decryption" + e);
-	    System.exit(0);
-	} catch (InvalidAlgorithmParameterException e) {
-	    System.err.println("Invalid algorithm parameter for decryption" + e);
-	    System.exit(0);
-	}
-
-
-	// DECRYPTION FINAL
-	byte [] outBuffer = null;
-	try {
-	    outBuffer = decryptingCipher.doFinal(buffer);
-	} catch (IllegalBlockSizeException e) {
-	    System.err.println("Invalid block size for decryption");
-	    System.exit(0);
-	} catch (BadPaddingException e) {
-	    System.err.println("Bad padding for decryption");
-	    System.exit(0);
-	}
-
-	System.out.println(outBuffer);
-	for(byte b : outBuffer) System.out.print(b + " ");
-	System.out.println("");
-	for(byte b : outBuffer) System.out.print(Integer.toBinaryString(b) + " ");
-	System.out.println("");
-	System.out.println(new String(outBuffer, dataCharset));
-
-
-	int temp = 0;
-	//Reading data from file, encrypting it and writing it to encrypted file
-	//Learning to read and write data streams (plain text data)
-	try (FileInputStream fis = new FileInputStream("foo");
-	     FileOutputStream fos = new FileOutputStream("foo2")){
-	    while((temp=fis.read())!=-1) fos.write(temp);
-	} catch (IOException e) {
-	    System.err.println("Error while reading/writing file: " + e);
-	    System.exit(0);
-	}
-
-	
-
-	//Using CipherInputStream to read, encrypt, write and decrypt files
-
-	try (FileInputStream fis = new FileInputStream("foo");
-	     FileOutputStream fos = new FileOutputStream("foo_crypt")){
-	    CipherInputStream cis = new CipherInputStream(fis,c2);
-	    while((temp=cis.read())!=-1) fos.write(temp);
-	} catch (IOException e) {
-	    System.err.println("Error while reading/writing file: " + e);
-	    System.exit(0);
-	}
-
-	try (FileInputStream fis = new FileInputStream("foo_crypt");
-	     FileOutputStream fos = new FileOutputStream("foo_decrypt")){
-	    CipherInputStream cis = new CipherInputStream(fis,decryptingCipher);
-	    while((temp=cis.read())!=-1) fos.write(temp);
-	} catch (IOException e) {
-	    System.err.println("Error while reading/writing file: " + e);
-	    System.exit(0);
-	}
-	} */
 }
