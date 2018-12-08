@@ -29,11 +29,13 @@ import java.nio.ByteBuffer;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import java.util.Arrays;
 
 public class Cryptest {
-    private static String cipherAlgo = "AES/CBC/PKCS5Padding";
+
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
     public static void main(String [] args){
@@ -94,75 +96,18 @@ public class Cryptest {
 	
 	// Reading metadata for decryption
 
-	//Cipher decryptingCipher = getInstanceOfPBECipher();
 
 	try (FileInputStream fis = new FileInputStream("foo_encrypt");
 	     FileOutputStream fos = new FileOutputStream("foo_decrypt")){
 
-	    // Read whole file contents to temp variable
-	    
-	    byte [] tempBytesFromFile = new byte[10024];
-	    byte [] tempBytesToFile = new byte[10024];
-
-	    int lengthOfInput = -1;
-	    int lengthOfOutput = -1;
-	    
-	    lengthOfInput = fis.read(tempBytesFromFile);
-
-
-	    
-	    ByteBuffer bb = ByteBuffer.allocate(4);
-
-	    bb.put(tempBytesFromFile, 0, 4); 
-	    bb.rewind();
-	    int lengthOfMetadata = bb.getInt();
-
-	    byte [] metadata = Arrays.copyOf(tempBytesFromFile, lengthOfMetadata);
-	    
-	    System.out.println("Read from input: " + lengthOfInput + " total, " +
-			       lengthOfMetadata + " is metadata");
-	    
-	    PBEParameterSpec pbeps = Cryptest.parametersFromBytes(metadata);
-	    IvParameterSpec ivps = (IvParameterSpec) pbeps.getParameterSpec();
-	    Cipher decryptingCipher = getInstanceOfPBECipher();
-	    
-	    SecretKeySpec secretKeyForDecrypt = getSecretKeyForPBECipher(password,
-									 pbeps.getSalt(),
-									 pbeps.getIterationCount());//*/
-	    //	    SecretKey secretKeyForDecrypt = getSecretKeyForPBECipher(password);
-		    
-	    
-	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt, ivps);
-	    
-	    System.out.println("Trying to decrypt");
-	    
-	    stringBytesAfterDecryption = decryptingCipher.doFinal(encryptedString);
-	    System.out.println("Decrypted text: " + new String(stringBytesAfterDecryption,
-							       dataCharset));
-	    
-	    lengthOfOutput = decryptingCipher.doFinal(tempBytesFromFile,
-						      lengthOfMetadata,
-						      lengthOfInput-lengthOfMetadata,
-						      tempBytesToFile);
-
-	    fos.write(tempBytesToFile, 0, lengthOfOutput);
-						    
+	    decryptDataStreamToStream(password,fis,fos);
 
 
 	} catch (IOException e) {
 	    System.err.println("Error while reading/writing file: " + e);
-	} catch (InvalidKeyException e) {
-		System.err.println("Invalid key for decryption: " + e + e.getMessage());
-	} catch (InvalidAlgorithmParameterException e) {
-		    System.err.println("Invalid algorithm parameter exception" + e);
-	}
-	catch (ShortBufferException e) {
-	    System.out.println("Buffer too short!" + e);
-	}  catch (javax.crypto.IllegalBlockSizeException e) {
-	    System.out.println("Illegal block size " + e);
-	} catch (javax.crypto.BadPaddingException e) {
-	    System.out.println("Bad padding " + e);
-	} catch (Exception e) {System.out.println(e);}
+	} catch (Exception e) {
+	    System.out.println(e);
+        }
 
 	
 	// ============ FUTURE GOALS HERE =============
@@ -178,8 +123,95 @@ public class Cryptest {
 
     }
 
+    /**
+     * Function for decrypting data from stream and sending it into another stream
+     * @param CipherObject is a cipher engine used for decryption
+     * @param pass password for decryption
+     * @param is is a stream containg data in format native to this class
+     * @param os is a target stream for decrypted data
+     * @return byte length of decrypted data, -1 if error was encountered
+     */
+    public static int decryptDataStreamToStream(char [] pass,
+						InputStream is,
+						OutputStream os) throws IOException {
+	char [] password = Arrays.copyOf(pass, pass.length);
+	Cipher decryptingCipher = getInstanceOfPBECipher();
+	// Read whole file contents to temp variable
+	    
+	byte [] tempBytesRead = new byte[10024];
+	byte [] tempBytesToWrite = new byte[10024];
+
+	int lengthOfInput = -1;
+	int lengthOfOutput = -1;
+	    
+	lengthOfInput = is.read(tempBytesRead);
+	int lengthOfMetadata = -1;
+
+	byte [] metadata = null;
+
 	
+	    ByteBuffer bb = ByteBuffer.allocate(4);
+
+	    bb.put(tempBytesRead, 0, 4); 
+	    bb.rewind();
+	    lengthOfMetadata = bb.getInt();
+
+	    metadata = Arrays.copyOf(tempBytesRead, lengthOfMetadata);
+	
+	System.out.println("Read from input: " + lengthOfInput + " total, " +
+			   lengthOfMetadata + " is metadata");
+	try{   
+	    PBEParameterSpec pbeps = Cryptest.parametersFromBytes(metadata);
+	    IvParameterSpec ivps = (IvParameterSpec) pbeps.getParameterSpec();
+	    
+	    
+	    SecretKeySpec secretKeyForDecrypt = getSecretKeyForPBECipher(password,
+									 pbeps.getSalt(),
+									 pbeps.getIterationCount());
+	    decryptingCipher.init(Cipher.DECRYPT_MODE, secretKeyForDecrypt, ivps);
+	    
+	}
+
+	catch (InvalidKeyException e) {
+	    System.err.println("Invalid key for decryption: " + e + e.getMessage());
+	    return -1;
+	} catch (InvalidAlgorithmParameterException e) {
+	    System.err.println("Invalid algorithm parameter exception" + e);
+	    return -1;
+	}  
+	System.out.println("Trying to decrypt");
+	    
+	//stringBytesAfterDecryption = decryptingCipher.doFinal(encryptedString);
+	//System.out.println("Decrypted text: " + new String(stringBytesAfterDecryption,
+	//						   dataCharset));
+	try {    
+	lengthOfOutput = decryptingCipher.doFinal(tempBytesRead,
+						  lengthOfMetadata,
+						  lengthOfInput-lengthOfMetadata,
+						  tempBytesToWrite);
+	}  catch (ShortBufferException e) {
+	    System.out.println("Buffer too short!" + e);
+	    return -1;
+	} catch (javax.crypto.IllegalBlockSizeException e) {
+	    System.out.println("Illegal block size " + e);
+	    return -1;
+	} catch (javax.crypto.BadPaddingException e) {
+	    System.out.println("Bad padding " + e);
+	    return -1;
+	}
+	
+	os.write(tempBytesToWrite, 0, lengthOfOutput);
+	return lengthOfOutput;
+    }
+
+    /**
+     * Function for getting Cipher instance for AES/CBC/PKCS5Padding algorithm
+     * Convieniently should take care of errors (which probably should not happen)
+     * @return instance of cipher object for AES/CBC/PKCS5Padding algorithm
+     */
     public static Cipher getInstanceOfPBECipher() {
+
+        String cipherAlgo = "AES/CBC/PKCS5Padding";
     	Cipher cipherInstance = null;
 	try{
 	    //Creating cipher object for AES 128bit encryption with padding
