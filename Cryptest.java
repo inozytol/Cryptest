@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
 
 
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -50,42 +51,12 @@ public class Cryptest {
        	char [] password = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
 	int itCount = 1024;
 
-	byte[] salt = new byte[10];
-	new SecureRandom().nextBytes(salt); //generating random bytes for salt
-	
-	SecretKeySpec secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
-	// ENCRYPTION INIT
-	
-	Cipher encryptingCipher = getInstanceOfPBECipher();
-	
-	// before encryption cipher object must be initialized with mode, key and pbe params
-	// pbe parames optional?
-	try{
-	    encryptingCipher.init(Cipher.ENCRYPT_MODE, secretKeyForEncryption);
-	} catch (InvalidKeyException e) {
-	    System.err.println("Invalid key for encryption: " + e.getMessage());
-	    System.err.println("Got " + secretKeyForEncryption.getAlgorithm());
-	    System.exit(1);
-	}
 
 	try (FileInputStream fis = new FileInputStream("foo");
 	     FileOutputStream fos = new FileOutputStream("foo_encrypt")){
 
-	    CipherInputStream cis = new CipherInputStream(fis,encryptingCipher);
-
-	    byte [] iv = encryptingCipher.getIV();
-	    byte [] output = Cryptest.parametersToBytes(itCount, salt, iv);
-
-	    fos.write(output);
-	    int temp;
-	    int counter = 0;
-	    while((temp=cis.read())!=-1) {
-		counter++;
-		fos.write(temp);
-	    }
-	    System.out.println("Wrote " + output.length + " bytes of metada " +
-			       "and " + counter + " bytes of encrypted data");
-	    encryptedString = encryptingCipher.doFinal(stringBytesToEncrypt);
+	    encryptDataStreamToStream(password, itCount, fis,fos);
+	    
 	    
 	} catch (IOException e) {
 	    System.err.println("Error while reading/writing file: " + e);
@@ -103,12 +74,7 @@ public class Cryptest {
 	    decryptDataStreamToStream(password,fis,fos);
 
 
-	} catch (IOException e) {
-	    System.err.println("Error while reading/writing file: " + e);
-	} catch (Exception e) {
-	    System.out.println(e);
-        }
-
+	} catch (IOException e){System.err.println(e);}
 	
 	// ============ FUTURE GOALS HERE =============
 
@@ -121,6 +87,45 @@ public class Cryptest {
 	// this way we could change password without decrypting and encryptin all the data
 	    
 
+    }
+
+
+
+    public static int encryptDataStreamToStream(char [] pass,
+					       int itCount,
+					       InputStream is,
+					       OutputStream os) throws IOException {
+	char [] password = Arrays.copyOf(pass, pass.length);
+	byte[] salt = new byte[10];
+	new SecureRandom().nextBytes(salt); //generating random bytes for salt
+	
+	SecretKeySpec secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
+	// ENCRYPTION INIT
+	
+	Cipher encryptingCipher = getInstanceOfPBECipher();
+	
+	// before encryption cipher object must be initialized with mode, key and pbe params
+	// pbe parames optional?
+	try{
+	    encryptingCipher.init(Cipher.ENCRYPT_MODE, secretKeyForEncryption);
+	} catch (InvalidKeyException e) {
+	    System.err.println("Invalid key for encryption: " + e.getMessage());
+	    System.err.println("Got " + secretKeyForEncryption.getAlgorithm());
+	    System.exit(1);
+	}
+	CipherInputStream cis = new CipherInputStream(is,encryptingCipher);
+
+	byte [] iv = encryptingCipher.getIV();
+	byte [] output = Cryptest.parametersToBytes(itCount, salt, iv);
+
+	os.write(output);
+	int temp;
+	int counter = 0;
+	while((temp=cis.read())!=-1) {
+	    counter++;
+	    os.write(temp);
+	}
+	return counter;
     }
 
     /**
