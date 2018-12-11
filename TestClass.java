@@ -15,6 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import java.security.SecureRandom;
+
 public class TestClass {
 
     @Test
@@ -49,6 +51,51 @@ public class TestClass {
     void testEncryptionDecryption() {
 	byte [] dataToEncrypt = new byte[]{122, -17, 23, -98, 28, 19};
 
+	byte [] encrypted = null;
+	byte [] decrypted = null;
+	
+       	char [] password = {'u', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
+	int itCount = 10204;
+	
+	try (ByteArrayInputStream bais = new ByteArrayInputStream(dataToEncrypt);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+
+	    Cryptest.encryptDataStreamToStream(password, itCount, bais,baos);
+	    encrypted = baos.toByteArray();
+	    
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	} catch (Exception e) {System.out.println(e);}
+
+
+	
+	// Reading metadata for decryption
+
+
+	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();){
+
+	    Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    decrypted = baos.toByteArray();
+				      
+	} catch (IOException e){System.err.println(e);}
+	
+	assertTrue(Arrays.equals(dataToEncrypt, decrypted));
+    }
+
+
+    @Test
+    void testEncryptionDecryptionLong() {
+	byte [] dataToEncrypt = new byte[500000];
+	byte [] randomStuff = new byte[100];
+	int randomStuffCounter = 0;
+	new SecureRandom().nextBytes(randomStuff); //generating random bytes for salt
+	for(int i = 0; i < dataToEncrypt.length; i++){
+	    dataToEncrypt[i] = randomStuff[randomStuffCounter++];
+	    if(randomStuffCounter == randomStuff.length) randomStuffCounter = 0;
+	}
+	
 	byte [] encrypted = null;
 	byte [] decrypted = null;
 	
