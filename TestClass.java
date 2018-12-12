@@ -68,19 +68,15 @@ public class TestClass {
 	    System.exit(0);
 	} catch (Exception e) {System.out.println(e);}
 
-
-	
 	// Reading metadata for decryption
 
-
 	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();){
+		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    itCount = Cryptest.decryptDataStreamToStream(password,bais,baos);
 	    decrypted = baos.toByteArray();
 				      
 	} catch (IOException e){System.err.println(e);}
-	
 	assertTrue(Arrays.equals(dataToEncrypt, decrypted));
     }
 

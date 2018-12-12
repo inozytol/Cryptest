@@ -40,41 +40,6 @@ public class Cryptest {
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
     public static void main(String [] args){
-
-	// Plain text for encryption should be converted to bytes
-	Charset dataCharset = StandardCharsets.UTF_8;
-	byte [] stringBytesToEncrypt = "This is plaintext".getBytes(dataCharset);
-	byte [] encryptedString = null;
-	byte [] stringBytesAfterDecryption;
-	String decryptedString;
-	
-       	char [] password = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
-	int itCount = 1024;
-
-
-	try (FileInputStream fis = new FileInputStream("foo");
-	     FileOutputStream fos = new FileOutputStream("foo_encrypt")){
-
-	    encryptDataStreamToStream(password, itCount, fis,fos);
-	    
-	    
-	} catch (IOException e) {
-	    System.err.println("Error while reading/writing file: " + e);
-	    System.exit(0);
-	} catch (Exception e) {System.out.println(e);}
-
-
-	
-	// Reading metadata for decryption
-
-
-	try (FileInputStream fis = new FileInputStream("foo_encrypt");
-	     FileOutputStream fos = new FileOutputStream("foo_decrypt")){
-
-	    decryptDataStreamToStream(password,fis,fos);
-
-
-	} catch (IOException e){System.err.println(e);}
 	
 	// ============ FUTURE GOALS HERE =============
 
@@ -143,28 +108,30 @@ public class Cryptest {
 	Cipher decryptingCipher = getInstanceOfPBECipher();
 	// Read whole file contents to temp variable
 	    
-	byte [] tempBytesRead = new byte[10024];
-	byte [] tempBytesToWrite = new byte[10024];
+	byte [] tempBytesRead = new byte[16];
+	byte [] tempBytesToWrite = new byte[16];
 
 	int lengthOfInput = -1;
 	int lengthOfOutput = -1;
+
+	int ret = 0;
 	    
-	lengthOfInput = is.read(tempBytesRead);
+	lengthOfInput = is.read(tempBytesRead, 0, 4);
 	int lengthOfMetadata = -1;
 
 	byte [] metadata = null;
 
 	
-	    ByteBuffer bb = ByteBuffer.allocate(4);
+	ByteBuffer bb = ByteBuffer.allocate(4);
 
-	    bb.put(tempBytesRead, 0, 4); 
-	    bb.rewind();
-	    lengthOfMetadata = bb.getInt();
+	bb.put(tempBytesRead, 0, 4); 
+	bb.rewind();
+	lengthOfMetadata = bb.getInt();
+	metadata = new byte[lengthOfMetadata]; //four first bytes were length of metadata
 
-	    metadata = Arrays.copyOf(tempBytesRead, lengthOfMetadata);
+	lengthOfInput = is.read(metadata,4, lengthOfMetadata-4);
 	
-	System.out.println("Read from input: " + lengthOfInput + " total, " +
-			   lengthOfMetadata + " is metadata");
+
 	try{   
 	    PBEParameterSpec pbeps = Cryptest.parametersFromBytes(metadata);
 	    IvParameterSpec ivps = (IvParameterSpec) pbeps.getParameterSpec();
@@ -184,16 +151,22 @@ public class Cryptest {
 	    System.err.println("Invalid algorithm parameter exception" + e);
 	    return -1;
 	}  
-	System.out.println("Trying to decrypt");
-	    
-	//stringBytesAfterDecryption = decryptingCipher.doFinal(encryptedString);
-	//System.out.println("Decrypted text: " + new String(stringBytesAfterDecryption,
-	//						   dataCharset));
-	try {    
-	lengthOfOutput = decryptingCipher.doFinal(tempBytesRead,
-						  lengthOfMetadata,
-						  lengthOfInput-lengthOfMetadata,
-						  tempBytesToWrite);
+
+	try {
+	    while((lengthOfInput=is.read(tempBytesRead))!=-1){
+		lengthOfOutput = decryptingCipher.update(tempBytesRead, 0, lengthOfInput, tempBytesToWrite);
+		//System.out.println("length of input: " + lengthOfInput + " length of output " + lengthOfOutput);
+		if(lengthOfInput!=16) System.err.println("something wrong...");
+		if(lengthOfOutput>0) ret += lengthOfOutput;
+		os.write(tempBytesToWrite, 0 ,lengthOfOutput);
+		//		System.out.println(tempBytesToWrite);
+	    }
+	    lengthOfOutput = decryptingCipher.doFinal(tempBytesToWrite, 0);
+	    if(lengthOfOutput > 0) {
+		os.write(tempBytesToWrite, 0, lengthOfOutput);
+		ret += lengthOfOutput;
+	    }
+	
 	}  catch (ShortBufferException e) {
 	    System.out.println("Buffer too short!" + e);
 	    return -1;
@@ -204,9 +177,8 @@ public class Cryptest {
 	    System.out.println("Bad padding " + e);
 	    return -1;
 	}
-	
-	os.write(tempBytesToWrite, 0, lengthOfOutput);
-	return lengthOfOutput;
+       
+	return ret;
     }
 
     /**
@@ -290,7 +262,7 @@ public class Cryptest {
      * 
      */
     public static PBEParameterSpec parametersFromBytes(byte [] data){
-	int start = 4;  // ignore first four bytes as they contain data length
+	int start = 4;  // don't ignore first four bytes as they dont contain data length
 	ByteBuffer bb = ByteBuffer.wrap(data, start, 4);
 	int itCount = bb.getInt(); //convert next four bytes int iteration count
 	
