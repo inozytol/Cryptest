@@ -55,22 +55,28 @@ public class Cryptest {
     }
 
 
-
+    /**
+     * Function for encrypting data from stream and sending it into another stream
+     * Function will get instance of cipher and initalize it
+     * @param pass password for enecryption
+     * @param itCount iteration count for turning password into key
+     * @param is is a stream containg data for encryption
+     * @param os is a target stream for encrypted data
+     * @return byte length of decrypted data, -1 if error was encountered
+     */
     public static int encryptDataStreamToStream(char [] pass,
 					       int itCount,
 					       InputStream is,
 					       OutputStream os) throws IOException {
 	char [] password = Arrays.copyOf(pass, pass.length);
 	byte[] salt = new byte[10];
-	new SecureRandom().nextBytes(salt); //generating random bytes for salt
+	new SecureRandom().nextBytes(salt);
 	
 	SecretKeySpec secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
-	// ENCRYPTION INIT
 	
 	Cipher encryptingCipher = getInstanceOfPBECipher();
 	
-	// before encryption cipher object must be initialized with mode, key and pbe params
-	// pbe parames optional?
+	// before encryption cipher object must be initialized with mode and key
 	try{
 	    encryptingCipher.init(Cipher.ENCRYPT_MODE, secretKeyForEncryption);
 	} catch (InvalidKeyException e) {
@@ -155,12 +161,10 @@ public class Cryptest {
 	try {
 	    while((lengthOfInput=is.read(tempBytesRead))!=-1){
 		lengthOfOutput = decryptingCipher.update(tempBytesRead, 0, lengthOfInput, tempBytesToWrite);
-		//System.out.println("length of input: " + lengthOfInput + " length of output " + lengthOfOutput);
-		if(lengthOfInput!=16) System.err.println("something wrong...");
 		if(lengthOfOutput>0) ret += lengthOfOutput;
 		os.write(tempBytesToWrite, 0 ,lengthOfOutput);
-		//		System.out.println(tempBytesToWrite);
 	    }
+	    //we need to do final without input
 	    lengthOfOutput = decryptingCipher.doFinal(tempBytesToWrite, 0);
 	    if(lengthOfOutput > 0) {
 		os.write(tempBytesToWrite, 0, lengthOfOutput);
@@ -203,7 +207,12 @@ public class Cryptest {
 	return cipherInstance;
     }
 
-    public static SecretKeySpec getSecretKeyForPBECipher(char []  password, byte [] salt, int itCount) {
+    /**
+     * Function for generating secret key from password, salt and iteration count
+     */
+    public static SecretKeySpec getSecretKeyForPBECipher(char []  password,
+							 byte [] salt,
+							 int itCount) {
 	SecretKey secretKey = null;
 	//needed to add length, otherwise for this algo factory was complaining
 	PBEKeySpec pbeKeySpec = new PBEKeySpec(password, salt, itCount, 128);
@@ -225,7 +234,7 @@ public class Cryptest {
 	    System.err.println("Invalid key spec for key factory" + e);
 	}
 	// attaches algorithm info to secret key, as required by cipher init of used algo
-	// SecretKey + "AES" string -> SecretKeySpec
+	// SecretKey + "AES" algo name => SecretKeySpec
 	SecretKeySpec skey = new SecretKeySpec(secretKey.getEncoded(), "AES"); 
 	return skey;
     }
@@ -258,7 +267,8 @@ public class Cryptest {
     }
 
     /** 
-     * Converts byte array returned by {@link #parametersToBytes(int iterationCount, byte [] salt, byte [] iv) parametersToBytes} function
+     * Converts byte array returned by {@link #parametersToBytes(int iterationCount, byte [] salt, byte [] iv) parametersToBytes} function into PBEParameterSpec
+     * Probably can be private
      * 
      */
     public static PBEParameterSpec parametersFromBytes(byte [] data){
