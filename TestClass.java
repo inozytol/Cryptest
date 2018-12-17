@@ -124,5 +124,39 @@ public class TestClass {
 	
 	assertTrue(Arrays.equals(dataToEncrypt, decrypted));
     }
+
+    @Test
+    void testEncryptionWithNegativeItCount() {
+	byte [] dataToEncrypt = new byte[]{122, -17, 23, -98, 28, 19};
+
+	byte [] encrypted = null;
+	byte [] decrypted = null;
+	
+       	char [] password = {'u', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
+	int itCount = -17;
+	
+	try (ByteArrayInputStream bais = new ByteArrayInputStream(dataToEncrypt);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+
+	    Cryptest.encryptDataStreamToStream(password, itCount, bais,baos);
+	    encrypted = baos.toByteArray();
+	    
+	} catch (IOException e) {
+	    System.err.println("Error while reading/writing file: " + e);
+	    System.exit(0);
+	} catch (Exception e) {System.out.println(e);}
+
+	// Reading metadata for decryption
+
+	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+
+	    itCount = Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    decrypted = baos.toByteArray();
+				      
+	} catch (IOException e){System.err.println(e);}
+	assertTrue(Arrays.equals(dataToEncrypt, decrypted));
+    }
+
 }
 
