@@ -41,6 +41,8 @@ public class Cryptest {
 
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
+    private static int itThreshold = 1000;
+    
     public static void main(String [] args){
 	
 	// ============ FUTURE GOALS HERE =============
@@ -73,6 +75,11 @@ public class Cryptest {
 	char [] password = Arrays.copyOf(pass, pass.length);
 	byte[] salt = new byte[10];
 	new SecureRandom().nextBytes(salt);
+
+	if(itCount < itThreshold) {
+	    //TODO: LOG setting minimum itCount
+	    itCount = itThreshold;
+	}
 	
 	SecretKeySpec secretKeyForEncryption = getSecretKeyForPBECipher(password, salt, itCount);
 	
