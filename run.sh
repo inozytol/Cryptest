@@ -29,6 +29,20 @@ then
     echo "Running Cryptest"
     cd target
     java inozytol.dataencryption.Cryptest
+    cd ..
+    if [ $? -eq "0" ]
+    then
+	
+	rm -rf doc
+	mkdir doc
+	cd doc
+	javadoc ../src/main/inozytol/dataencryption/*
+	cd ../
+	cd target
+	jar cvf Cryptest.jar inozytol/dataencryption/Cryptest.class
+	cd ../
+    fi
+
     #rm -rf doc
     #mkdir doc
     #cd doc
