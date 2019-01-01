@@ -1,5 +1,8 @@
 package inozytol.dataencryption;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+ 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
@@ -27,8 +30,6 @@ import java.nio.charset.StandardCharsets; //needed for specifing charset for get
 import java.nio.charset.Charset;
 import java.nio.ByteBuffer;
 
-
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,6 +43,8 @@ public class Cryptest {
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
     private static int itThreshold = 1000;
+
+    private static final Logger logger = LogManager.getLogger();
     
     public static void main(String [] args){
 	
@@ -55,7 +58,6 @@ public class Cryptest {
 	// next step would be wrapping key
 	// this way we could change password without decrypting and encryptin all the data
 	    
-
     }
 
 
@@ -78,6 +80,7 @@ public class Cryptest {
 
 	if(itCount < itThreshold) {
 	    //TODO: LOG setting minimum itCount
+	    logger.info("Iteration count for encryption too low. (" + itCount + "). Setting: " + itThreshold);
 	    itCount = itThreshold;
 	}
 	
