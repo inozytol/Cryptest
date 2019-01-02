@@ -14,7 +14,7 @@ echo "Hello and goodbye" > target/foo
 
 result=0 # contains sum of exit codes from various commands. Zero if everything successful
 
-javac -d target -cp $LOG4J_JAR_API_PATH:.:target src/main/inozytol/dataencryption/Cryptest.java
+javac -d target -cp $LOG4J_JAR_API_PATH:.:target src/main/inozytol/dataencryption/Cryptest.java src/main/inozytol/dataencryption/StreamCrypt.java
 let "result=$result+$?"
 
 # Test compilation requires this classpath as it contains imports from junit jupiter
@@ -37,7 +37,7 @@ then
 	javadoc -cp $LOG4J_JAR_API_PATH:.:../target ../src/main/inozytol/dataencryption/*
 	cd ../
 	cd target
-	jar cvf Cryptest.jar inozytol/dataencryption/Cryptest.class
+	jar cvf Cryptest.jar inozytol/dataencryption/Cryptest.class inozytol/dataencryption/StreamCrypt.class
 	cd ../
     fi
 

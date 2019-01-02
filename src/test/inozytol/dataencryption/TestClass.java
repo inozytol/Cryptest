@@ -32,7 +32,7 @@ public class TestClass {
 	byte [] ivOriginal = {0x02, 0x1F, 0x32, 0x17, 0x01};
 	byte [] ivRead = null;
 
-
+	
 	byte [] output = Cryptest.parametersToBytes(itCountOriginal, saltOriginal, ivOriginal);
 	PBEParameterSpec pbeps = Cryptest.parametersFromBytes(output);
 
@@ -58,11 +58,13 @@ public class TestClass {
 	
        	char [] password = {'u', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
 	int itCount = 10204;
+
+	StreamCrypt sc = new Cryptest();
 	
 	try (ByteArrayInputStream bais = new ByteArrayInputStream(dataToEncrypt);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    Cryptest.encryptDataStreamToStream(password, itCount, bais,baos);
+	    sc.encryptDataStreamToStream(password, itCount, bais,baos);
 	    encrypted = baos.toByteArray();
 	    
 	} catch (IOException e) {
@@ -72,10 +74,12 @@ public class TestClass {
 
 	// Reading metadata for decryption
 
+	sc = new Cryptest();
+
 	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    itCount = Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    itCount = sc.decryptDataStreamToStream(password,bais,baos);
 	    decrypted = baos.toByteArray();
 				      
 	} catch (IOException e){System.err.println(e);}
@@ -88,6 +92,9 @@ public class TestClass {
 	byte [] dataToEncrypt = new byte[500000];
 	byte [] randomStuff = new byte[100];
 	int randomStuffCounter = 0;
+
+	StreamCrypt sc = new Cryptest();
+	
 	new SecureRandom().nextBytes(randomStuff); //generating random bytes for salt
 	for(int i = 0; i < dataToEncrypt.length; i++){
 	    dataToEncrypt[i] = randomStuff[randomStuffCounter++];
@@ -103,7 +110,7 @@ public class TestClass {
 	try (ByteArrayInputStream bais = new ByteArrayInputStream(dataToEncrypt);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    Cryptest.encryptDataStreamToStream(password, itCount, bais,baos);
+	    sc.encryptDataStreamToStream(password, itCount, bais,baos);
 	    encrypted = baos.toByteArray();
 	    
 	} catch (IOException e) {
@@ -115,11 +122,12 @@ public class TestClass {
 	
 	// Reading metadata for decryption
 
+	sc = new Cryptest();
 
 	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();){
 
-	    Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    sc.decryptDataStreamToStream(password,bais,baos);
 	    decrypted = baos.toByteArray();
 				      
 	} catch (IOException e){System.err.println(e);}
@@ -136,11 +144,13 @@ public class TestClass {
 	
        	char [] password = {'u', 'a', 'b', 'c', 'd', 'e', 'f', 'g'};	
 	int itCount = -17;
+
+	StreamCrypt sc = new Cryptest();
 	
 	try (ByteArrayInputStream bais = new ByteArrayInputStream(dataToEncrypt);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    Cryptest.encryptDataStreamToStream(password, itCount, bais,baos);
+	    sc.encryptDataStreamToStream(password, itCount, bais,baos);
 	    encrypted = baos.toByteArray();
 	    
 	} catch (IOException e) {
@@ -150,10 +160,12 @@ public class TestClass {
 
 	// Reading metadata for decryption
 
+	sc = new Cryptest();
+	
 	try (	ByteArrayInputStream bais = new ByteArrayInputStream(encrypted);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream()){
 
-	    itCount = Cryptest.decryptDataStreamToStream(password,bais,baos);
+	    itCount = sc.decryptDataStreamToStream(password,bais,baos);
 	    decrypted = baos.toByteArray();
 				      
 	} catch (IOException e){System.err.println(e);}

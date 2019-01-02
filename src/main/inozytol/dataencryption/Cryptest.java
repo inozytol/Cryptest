@@ -38,7 +38,7 @@ import java.io.OutputStream;
 
 import java.util.Arrays;
 
-public class Cryptest {
+public class Cryptest implements StreamCrypt{
 
     private static String keyAlgo = "AES";
     private static String pbeCipherAlgo = "PBEWithHmacSHA256AndAES_128";
@@ -70,7 +70,7 @@ public class Cryptest {
      * @param os is a target stream for encrypted data
      * @return byte length of decrypted data, -1 if error was encountered
      */
-    public static int encryptDataStreamToStream(char [] pass,
+    public int encryptDataStreamToStream(char [] pass,
 					       int itCount,
 					       InputStream is,
 					       OutputStream os) throws IOException {
@@ -113,13 +113,12 @@ public class Cryptest {
 
     /**
      * Function for decrypting data from stream and sending it into another stream
-     * @param CipherObject is a cipher engine used for decryption
      * @param pass password for decryption
      * @param is is a stream containg data in format native to this class
      * @param os is a target stream for decrypted data
      * @return byte length of decrypted data, -1 if error was encountered
      */
-    public static int decryptDataStreamToStream(char [] pass,
+    public int decryptDataStreamToStream(char [] pass,
 						InputStream is,
 						OutputStream os) throws IOException {
 	char [] password = Arrays.copyOf(pass, pass.length);
@@ -202,7 +201,7 @@ public class Cryptest {
      * Convieniently should take care of errors (which probably should not happen)
      * @return instance of cipher object for AES/CBC/PKCS5Padding algorithm
      */
-    public static Cipher getInstanceOfPBECipher() {
+    static Cipher getInstanceOfPBECipher() {
 
         String cipherAlgo = "AES/CBC/PKCS5Padding";
     	Cipher cipherInstance = null;
@@ -222,7 +221,7 @@ public class Cryptest {
     /**
      * Function for generating secret key from password, salt and iteration count
      */
-    public static SecretKeySpec getSecretKeyForPBECipher(char []  password,
+    static SecretKeySpec getSecretKeyForPBECipher(char []  password,
 							 byte [] salt,
 							 int itCount) {
 	SecretKey secretKey = null;
@@ -259,7 +258,7 @@ public class Cryptest {
      * @param iv initialization vector for CBC AES encryption
      * @return byte array beginning with its length, and containing parameter values. Arrays are precluded with their lengths
      */
-    public static byte[] parametersToBytes(int iterationCount, byte [] salt, byte [] iv){
+    static byte[] parametersToBytes(int iterationCount, byte [] salt, byte [] iv){
 	int saltLength = salt.length;
 	int ivLength = iv.length;
 	//4 bytes for data length, 4 bytes for iteration count + 2x4 bytes for salt and iv lengths
@@ -283,7 +282,7 @@ public class Cryptest {
      * Probably can be private
      * 
      */
-    public static PBEParameterSpec parametersFromBytes(byte [] data){
+    static PBEParameterSpec parametersFromBytes(byte [] data){
 	int start = 4;  // don't ignore first four bytes as they dont contain data length
 	ByteBuffer bb = ByteBuffer.wrap(data, start, 4);
 	int itCount = bb.getInt(); //convert next four bytes int iteration count
