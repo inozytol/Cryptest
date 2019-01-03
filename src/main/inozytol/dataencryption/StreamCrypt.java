@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-interface StreamCrypt {
+public interface StreamCrypt {
 
     /**
      * Function for encrypting data from stream and sending it into another stream

@@ -33,8 +33,10 @@ then
 	
 	rm -rf doc
 	mkdir doc
+	rm -f src/main/inozytol/dataencryption/*~
 	cd doc
-	javadoc -cp $LOG4J_JAR_API_PATH:.:../target ../src/main/inozytol/dataencryption/*
+       
+	javadoc -cp $LOG4J_JAR_API_PATH ../src/main/inozytol/dataencryption/*
 	cd ../
 	cd target
 	jar cvf Cryptest.jar inozytol/dataencryption/Cryptest.class inozytol/dataencryption/StreamCrypt.class
