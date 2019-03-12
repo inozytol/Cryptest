@@ -1,0 +1,62 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>inozytol.dataencryption</groupId>
+  <artifactId>Cryptest</artifactId>
+  <version>1</version>
+
+
+
+  <properties>
+    <!-- without this it won't compile -->
+    <!-- https://stackoverflow.com/questions/49028810/error-source-option-1-5-is-no-longer-supported-use-1-6-or-later -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    
+    <!-- to avoid warning about encoding -->
+    <!-- https://stackoverflow.com/questions/24144073/why-does-maven-warn-me-about-encoding -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+
+
+  <build>
+
+    <sourceDirectory>src/main</sourceDirectory>
+    <plugins>
+
+   
+      
+    </plugins>
+  </build>
+  <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.11.2</version>
+    </dependency>
+
+
+
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.3.2</version>
+      <scope>test</scope>
+    </dependency>
+
+
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.3.2</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  
+</project>
